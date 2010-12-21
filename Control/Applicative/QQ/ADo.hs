@@ -71,6 +71,12 @@ import Data.Data (cast, gmapQ)
 --
 -- > ghci> [$ado| Just a <- [Just 1,Nothing,Just 2]; b <- "fo"; (a,b) |]
 -- > [Just (1,'f'),Just (1,'o'),Nothing,Nothing,Just (2,'f'),Just (2,'o')]
+--
+-- Notice that the last statement is not of an applicative type, so when translating
+-- from monadic do, drop the final 'return':
+--
+-- > (do x <- [1,2,3]; return (x + 1)) == [$ado| x <- [1,2,3]; x + 1 |]
+
 ado :: QuasiQuoter
 ado = ado'' False
 
