@@ -12,7 +12,7 @@
 -- In a similar role as 'fail' in do notation, if match failures can be
 -- expected, the result is an @Applicative f => f (Maybe a)@, rather than
 -- @Applicative f => f a@, where @a@ may be partially defined.
-module Language.Haskell.Meta.QQ.ADo (
+module Control.Applicative.QQ.ADo (
 
     ado,
     ado'

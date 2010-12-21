@@ -2,7 +2,7 @@
 
 -- | Idiom brackets. Vixey's idea.
 
-module Language.Haskell.Meta.QQ.Idiom (i) where
+module Control.Applicative.QQ.Idiom (i) where
 
 import Data.Generics
   (Data,everywhere,mkT)
