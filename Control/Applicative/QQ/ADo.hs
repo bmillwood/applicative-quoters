@@ -22,7 +22,7 @@ module Control.Applicative.QQ.ADo (
     ) where
 
 import Control.Applicative
-import Language.Haskell.Meta
+import Language.Haskell.Meta (parseExp)
 import Language.Haskell.TH.Lib
 import Language.Haskell.TH.Quote
 import Language.Haskell.TH.Syntax
