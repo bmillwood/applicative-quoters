@@ -4,8 +4,6 @@
 
 module Control.Applicative.QQ.Idiom (i) where
 
-import Data.Generics
-  (Data,everywhere,mkT)
 import Control.Applicative
 import Language.Haskell.Meta
 import Language.Haskell.TH.Lib
