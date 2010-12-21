@@ -29,7 +29,10 @@ Library
       haskell-src-meta >= 0.2 && < 0.4,
       template-haskell >= 2.4 && < 2.6
 
-  GHC-options: -Wall
+  -- We disable the missing-fields warning because not only do quoteType
+  -- and quoteDec make no sense in this context, we can't initialise them
+  -- because they don't exist in TH < 2.5.
+  GHC-options: -Wall -fno-warn-missing-fields
 
 Source-Repository head
   type:     git
