@@ -27,6 +27,7 @@ import Language.Haskell.TH.Lib
 import Language.Haskell.TH.Quote
 import Language.Haskell.TH.Syntax
 import Control.Monad
+import Data.Data (cast, gmapQ)
 
 -- $desugaring
 --
@@ -121,22 +122,24 @@ applicate rawPatterns stmt = do
                     es
 
 failingPattern :: Pat -> Q Bool
-failingPattern p = case p of
+failingPattern pat = case pat of
   LitP {} -> return True
   VarP {} -> return False
   TupP ps -> anyFailing ps
   ConP n ps -> liftM2 ((||) . not) (singleCon n) (anyFailing ps)
   InfixP p n q -> failingPattern $ ConP n [p, q]
   TildeP {} -> return False
-  BangP p -> failingPattern p
-  AsP _ p -> failingPattern p
   WildP -> return False
   RecP n fps -> failingPattern $ ConP n (map snd fps)
   ListP {} -> return True
-  SigP p _ -> failingPattern p
-  ViewP _ p -> failingPattern p
+  -- recurse on any subpatterns
+  -- we do this implicitly because it avoids referring to the constructors
+  -- by name, which means we can work with TH versions where they didn't
+  -- exist
+  _ -> fmap or . sequence $ gmapQ (mkQ (return False) failingPattern) pat
  where
   anyFailing = fmap or . mapM failingPattern
+  mkQ d f x = maybe d f (cast x)
 
 singleCon :: Name -> Q Bool
 singleCon n = do
