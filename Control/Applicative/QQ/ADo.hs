@@ -89,10 +89,7 @@ ado' :: QuasiQuoter
 ado' = ado'' True
 
 ado'' ::  Bool -> QuasiQuoter
-ado'' b = QuasiQuoter
-    { quoteExp = (\str -> applicate b =<< parseDo str)
-    , quotePat = either fail return . parsePat
-    }
+ado'' b = QuasiQuoter { quoteExp = \str -> applicate b =<< parseDo str }
 
 parseDo ::  (Monad m) => String -> m [Stmt]
 parseDo str =
