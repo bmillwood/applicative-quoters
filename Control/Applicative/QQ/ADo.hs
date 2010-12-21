@@ -1,4 +1,4 @@
-{-# LANGUAGE PatternGuards, TemplateHaskell, QuasiQuotes #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 -- | Applicative do. Phillipa Cowderoy's idea, some explanations due Edward
 -- Kmett
@@ -27,9 +27,6 @@ import Language.Haskell.TH.Lib
 import Language.Haskell.TH.Quote
 import Language.Haskell.TH.Syntax
 import Control.Monad
-import qualified Data.Set as S
-
-import Data.Generics
 
 -- $desugaring
 --
@@ -108,11 +105,11 @@ applicate rawPatterns stmt = do
                 LetS _ -> fail $ "LetS not supported"
                 ParS _ -> fail $ "ParS not supported"
 
-    fps <- failingPatterns ps
-    f' <- case filter (not . snd) $ zip ps fps of
-        [] -> return $ LamE ps f
-        _ | rawPatterns -> return $ LamE ps f
-          | otherwise -> do
+    fps <- filterM failingPattern ps
+
+    f' <- if rawPatterns || null fps
+      then return $ LamE ps f
+      else do
             xs <- mapM (const $ newName "x") ps
             return $ LamE (map VarP xs) $ CaseE (TupE (map VarE xs))
                 [Match (TupP ps) (NormalB $ ConE 'Just `AppE` f) []
@@ -123,20 +120,25 @@ applicate rawPatterns stmt = do
                     (VarE 'pure `AppE` f')
                     es
 
-failingPatterns ::  (Data a) => [a] -> Q [Bool]
-failingPatterns ps = flip mapM ps $ \p ->
-    let couldFail x = liftM not (singleCon x)
+failingPattern :: Pat -> Q Bool
+failingPattern p = case p of
+  LitP {} -> return True
+  VarP {} -> return False
+  TupP ps -> anyFailing ps
+  ConP n ps -> liftM2 ((||) . not) (singleCon n) (anyFailing ps)
+  InfixP p n q -> failingPattern $ ConP n [p, q]
+  TildeP {} -> return False
+  BangP p -> failingPattern p
+  AsP _ p -> failingPattern p
+  WildP -> return False
+  RecP n fps -> failingPattern $ ConP n (map snd fps)
+  ListP {} -> return True
+  SigP p _ -> failingPattern p
+  ViewP _ p -> failingPattern p
+ where
+  anyFailing = fmap or . mapM failingPattern
 
-        constrs :: Data a => a -> S.Set Name
-        constrs = S.fromList . map (\(ConP n _) -> n)
-            . listify (\x -> case x of ConP {} -> True; _ -> False)
-        irrefutables = constrs
-                    . listify (\x -> case x of TildeP {} -> True; _ -> False)
-
-    in liftM null $ filterM couldFail $ S.elems $
-        constrs p S.\\ irrefutables p
-
-singleCon ::  Name -> Q Bool
+singleCon :: Name -> Q Bool
 singleCon n = do
     DataConI _ _ tn _ <- reify n
     TyConI dec <- reify tn
