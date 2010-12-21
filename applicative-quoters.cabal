@@ -1,0 +1,34 @@
+Cabal-Version: >= 1.6
+
+Name:     applicative-quoters
+Version:  0.1
+Category: Language
+Synopsis: Quasiquoters for idiom brackets and an applicative do-notation
+
+Description:
+    Quasiquoters taken from Matt Morrow's haskell-src-meta to implement
+    Conor McBride's idiom brackets, and a do-notation that only requires
+    Applicative (and is correspondingly less powerful).
+
+Author:       Matt Morrow
+Maintainer:   Ben Millwood <haskell@benmachine.co.uk>
+Copyright:    (c) Matt Morrow
+License:      BSD3
+License-file: LICENSE
+
+Build-type:  Simple
+Tested-with: GHC == 7.0.1
+
+Library
+  Exposed-modules:
+      Control.Applicative.QQ.ADo
+      Control.Applicative.QQ.Idiom
+
+  Build-depends: base >= 4 && < 4.4,
+                 haskell-src-meta >= 0.2 && < 0.4
+
+  GHC-options: -Wall
+
+Source-Repository head
+  type:     git
+  location: git://github.com/benmachine/applicative-quoters.git
