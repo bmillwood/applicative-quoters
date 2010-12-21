@@ -29,8 +29,6 @@ import Language.Haskell.TH.Syntax
 import Control.Monad
 import qualified Data.Set as S
 
-import Language.Haskell.Meta.Utils (cleanNames)
-
 import Data.Generics
 
 -- $desugaring
@@ -88,7 +86,7 @@ ado' = ado'' True
 
 ado'' ::  Bool -> QuasiQuoter
 ado'' b = QuasiQuoter
-    { quoteExp = (\str -> fmap cleanNames $ applicate b =<< parseDo str)
+    { quoteExp = (\str -> applicate b =<< parseDo str)
     , quotePat = either fail return . parsePat
     }
 

@@ -16,7 +16,7 @@ import Language.Haskell.TH.Syntax
 -- [('f','b'),('f','a'),('f','r'),('o','b'),('o','a'),('o','r'),('o','b'),('o','a'),('o','r')]
 i :: QuasiQuoter
 i = QuasiQuoter
-    { quoteExp = (cleanNames <$>) . applicateQ
+    { quoteExp = applicateQ
     , quotePat = either fail return . parsePat
     }
 
@@ -32,15 +32,4 @@ unwindE :: Exp -> [Exp]
 unwindE = go []
   where go acc (e `AppE` e') = go (e':acc) e
         go acc e = e:acc
-
-cleanNames :: (Data a) => a -> a
-cleanNames = everywhere (mkT cleanName)
-  where cleanName :: Name -> Name
-        cleanName n
-          | isNameU n = n
-          | otherwise = (mkName . nameBase) n
-        isNameU :: Name -> Bool
-        isNameU (Name _ (NameU _)) = True
-        isNameU _ = False
-
 
