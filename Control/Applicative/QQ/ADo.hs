@@ -109,9 +109,9 @@ applicate rawPatterns stmt = do
                 LetS _ -> fail $ "LetS not supported"
                 ParS _ -> fail $ "ParS not supported"
 
-    fps <- filterM failingPattern ps
+    b <- if rawPatterns then return True else null <$> filterM failingPattern ps
 
-    f' <- if rawPatterns || null fps
+    f' <- if b
       then return $ LamE ps f
       else do
             xs <- mapM (const $ newName "x") ps
