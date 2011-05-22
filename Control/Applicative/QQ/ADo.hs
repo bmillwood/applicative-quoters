@@ -19,6 +19,9 @@ module Control.Applicative.QQ.ADo (
 
     -- * Desugaring
     -- $desugaring
+
+    -- * Caveats
+    -- $caveats
     ) where
 
 import Control.Applicative
@@ -63,6 +66,19 @@ import Data.Data (cast, gmapQ)
 -- Becomes:
 --
 -- > foo = (\ ~(x:xs) (A y) -> T x y) <$> foo bar baz <*> quux quaffle
+
+-- $caveats
+--
+-- Template Haskell is currently unable to reliably look up constructor names
+-- just from a string: if there is a type with the same name, it will
+-- return information for that instead. This means that the safe version of
+-- 'ado' is prone to failure where types and values share names. It tries to
+-- make a \"best guess\" in the common case that type and constructor have the
+-- same name, but has nontrivial failure modes. In such cases, 'ado'' should
+-- work fine: at a pinch, you can bind simple variables with it and case-match
+-- on them in your last statement.
+--
+-- See also: <http://hackage.haskell.org/trac/ghc/ticket/4429>
 
 -- | Usage:
 --
@@ -146,11 +162,32 @@ failingPattern pat = case pat of
 
 singleCon :: Name -> Q Bool
 singleCon n = do
-    DataConI _ _ tn _ <- reify n
-    TyConI dec <- reify tn
+    info <- reify n
+    -- This covers the common case of a data type with one of the
+    -- constructors being named the same as the type, but fails if there
+    -- is a type Foo and a constructor Foo of a different type :(
+    TyConI dec <- case info of
+        DataConI _ _ tn _ -> reify tn
+        -- we hope that the base of the tn is the same, but it is
+        -- properly qualified
+        TyConI (DataD _ _ _ cs _)
+          | any ((nameBase n ==) . nameBase . conName) cs -> return info
+          | otherwise -> errShadow
+        TyConI (NewtypeD _ _ _ c _)
+          | nameBase n == nameBase (conName c) -> return info -- eventually True
+          | otherwise -> errShadow
+        _ -> fail $ "ado singleCon: not a constructor: " ++ show info
     case dec of
         DataD _ _ _ [_] _ -> return True
         NewtypeD {} -> return True
         DataD _ _ _ (_:_) _ -> return False
-        _ -> fail $ "Bad dec: "++show dec
+        _ -> fail $ "ado singleCon: not a data declaration: " ++ show dec
+  where
+    errShadow = fail . concat $ ["ado singleCon: couldn't find data ",
+        "dec for name: ", show n, ", sorry :( - try using ado' instead"]
 
+conName :: Con -> Name
+conName (NormalC n _) = n
+conName (RecC n _) = n
+conName (InfixC _ n _) = n
+conName (ForallC _ _ c) = conName c
