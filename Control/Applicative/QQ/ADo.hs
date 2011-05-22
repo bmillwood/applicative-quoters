@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 
--- | Applicative do. Phillipa Cowderoy's idea, some explanations due Edward
+-- | Applicative do. Philippa Cowderoy's idea, some explanations due Edward
 -- Kmett
 --
 -- Pointful version of "Language.Haskell.Meta.QQ.Idiom". Note the only
