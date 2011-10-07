@@ -26,7 +26,7 @@ Library
 
   Build-depends:
       base >= 4 && < 4.5,
-      haskell-src-meta >= 0.2 && < 0.5,
+      haskell-src-meta >= 0.2 && < 0.6,
       template-haskell >= 2.4 && < 2.7
 
   -- We disable the missing-fields warning because not only do quoteType
