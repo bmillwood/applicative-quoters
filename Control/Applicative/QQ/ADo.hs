@@ -160,6 +160,8 @@ failingPattern pat = case pat of
   anyFailing = fmap or . mapM failingPattern
   mkQ d f x = maybe d f (cast x)
 
+-- | Take the name of a value constructor and try to find out if it is
+-- the only constructor of its type
 singleCon :: Name -> Q Bool
 singleCon n = do
     info <- reify n
