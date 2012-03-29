@@ -25,9 +25,9 @@ Library
       Control.Applicative.QQ.Idiom
 
   Build-depends:
-      base >= 4 && < 4.5,
+      base >= 4 && < 4.6,
       haskell-src-meta >= 0.2 && < 0.6,
-      template-haskell >= 2.4 && < 2.7
+      template-haskell >= 2.4 && < 2.8
 
   -- We disable the missing-fields warning because not only do quoteType
   -- and quoteDec make no sense in this context, we can't initialise them

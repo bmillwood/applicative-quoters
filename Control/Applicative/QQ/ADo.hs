@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell, CPP #-}
 
 -- | Applicative do. Philippa Cowderoy's idea, some explanations due Edward
 -- Kmett
@@ -69,7 +69,8 @@ import Data.Data (cast, gmapQ)
 
 -- $caveats
 --
--- Template Haskell is currently unable to reliably look up constructor names
+-- Versions of Template Haskell shipped prior to GHC 7.4 are unable 
+-- to reliably look up constructor names
 -- just from a string: if there is a type with the same name, it will
 -- return information for that instead. This means that the safe version of
 -- 'ado' is prone to failure where types and values share names. It tries to
@@ -162,6 +163,12 @@ failingPattern pat = case pat of
 
 singleCon :: Name -> Q Bool
 singleCon n = do
+#if MIN_VERSION_template_haskell(2,7,0)
+    n' <- lookupValueName (show n)
+    n <- case n' of
+      Just n -> return n
+      Nothing -> fail $ "Data constructor " ++ show n ++ " not in scope"
+#endif
     info <- reify n
     -- This covers the common case of a data type with one of the
     -- constructors being named the same as the type, but fails if there
