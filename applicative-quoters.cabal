@@ -1,7 +1,7 @@
 Cabal-Version: >= 1.6
 
 Name:     applicative-quoters
-Version:  0.1.0.3
+Version:  0.1.0.4
 Category: Language
 Synopsis: Quasiquoters for idiom brackets and an applicative do-notation
 
