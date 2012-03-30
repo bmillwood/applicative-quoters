@@ -1,0 +1,33 @@
+applicative-quoters provides two quasiquoters to be used with
+applicative functors: a do-notation-alike, ado, and an attempt to
+emulate Conor McBride's idiom brackets.
+
+They are originally taken from Matt Morrow's haskell-src-meta package,
+before he disappeared forever and I took up maintainership of it.
+
+There is a known bug where building the shared library fails on GHCs
+prior to 7.0.4 due to some strange TH magic.
+
+Changelog:
+
+0.1.0.4:
+- GHC 7.4 compatibility
+
+0.1.0.3:
+- Dependency update
+- Support infix applications in idiom brackets
+
+0.1.0.2:
+- GHC 7.2 compatibility
+
+0.1.0.1:
+- Stop ado' needlessly checking failing patterns
+- Make a better effort to resolve constructor names
+
+0.1:
+- Quasiquoters extracted from haskell-src-meta
+- Module names changed to Control.Applicative.QQ.{ADo,Idiom}
+- Stop stripping qualification from names
+- Fixes for failing pattern detection in ado
+- Drop dependency on syb and containers
+- quotePat fields removed
