@@ -26,11 +26,12 @@ module Control.Applicative.QQ.ADo (
 
 import Control.Applicative
 import Language.Haskell.Meta (parseExp)
-import Language.Haskell.TH.Lib
+import Language.Haskell.TH
 import Language.Haskell.TH.Quote
-import Language.Haskell.TH.Syntax
 import Control.Monad
 import Data.Data (cast, gmapQ)
+
+import Magic
 
 -- $desugaring
 --
@@ -69,14 +70,18 @@ import Data.Data (cast, gmapQ)
 
 -- $caveats
 --
--- Template Haskell is currently unable to reliably look up constructor names
--- just from a string: if there is a type with the same name, it will
--- return information for that instead. This means that the safe version of
--- 'ado' is prone to failure where types and values share names. It tries to
--- make a \"best guess\" in the common case that type and constructor have the
--- same name, but has nontrivial failure modes. In such cases, 'ado'' should
--- work fine: at a pinch, you can bind simple variables with it and case-match
--- on them in your last statement.
+-- Prior to GHC 7.4 and Template Haskell 2.7, it was impossible to reliably
+-- look up constructor names just from a string: if there is a type with the
+-- same name, it will return information for that instead.
+--
+-- This means that the safe version of 'ado' is prone to failure where types
+-- and values share names. It tries to make a \"best guess\" in the common
+-- case that type and constructor have the same name, but has nontrivial
+-- failure modes.
+--
+-- In such cases, 'ado'' should work fine: at a pinch, you
+-- can bind simple variables with it and case-match on them in your last
+-- statement.
 --
 -- See also: <http://hackage.haskell.org/trac/ghc/ticket/4429>
 
@@ -160,10 +165,19 @@ failingPattern pat = case pat of
   anyFailing = fmap or . mapM failingPattern
   mkQ d f x = maybe d f (cast x)
 
--- | Take the name of a value constructor and try to find out if it is
--- the only constructor of its type
-singleCon :: Name -> Q Bool
-singleCon n = do
+-- Uses lookupValueName when available via TH magic, otherwise tries a
+-- best-guess approach (see the caveats section)
+-- | Finds a 'TyConI dec' corresponding to the given name, and returns 'dec'
+findTyCon :: Name -> Q Dec
+findTyCon n = case $maybeLookupValueName of
+  Just fn -> do
+    DataConI _ _ tn _ <- maybe noScope reify =<< fn (show n)
+    TyConI dec <- reify tn
+    return dec
+   where
+    noScope = fail $ "Data constructor " ++ show n ++ " not in scope"
+  Nothing -> do
+    -- This is what we do when lookupValueName isn't available.
     info <- reify n
     -- This covers the common case of a data type with one of the
     -- constructors being named the same as the type, but fails if there
@@ -173,20 +187,28 @@ singleCon n = do
         -- we hope that the base of the tn is the same, but it is
         -- properly qualified
         TyConI (DataD _ _ _ cs _)
-          | any ((nameBase n ==) . nameBase . conName) cs -> return info
+          | any rightName cs -> return info
           | otherwise -> errShadow
         TyConI (NewtypeD _ _ _ c _)
-          | nameBase n == nameBase (conName c) -> return info -- eventually True
+          | rightName c -> return info
           | otherwise -> errShadow
         _ -> fail $ "ado singleCon: not a constructor: " ++ show info
+    return dec
+   where
+    rightName c = nameBase n == nameBase (conName c)
+    errShadow = fail . concat $ ["ado singleCon: couldn't find data ",
+        "dec for name: ", show n, ", sorry :( - try using ado' instead"]
+
+-- | Take the name of a value constructor and try to find out if it is
+-- the only constructor of its type
+singleCon :: Name -> Q Bool
+singleCon n = do
+    dec <- findTyCon n
     case dec of
         DataD _ _ _ [_] _ -> return True
         NewtypeD {} -> return True
         DataD _ _ _ (_:_) _ -> return False
         _ -> fail $ "ado singleCon: not a data declaration: " ++ show dec
-  where
-    errShadow = fail . concat $ ["ado singleCon: couldn't find data ",
-        "dec for name: ", show n, ", sorry :( - try using ado' instead"]
 
 conName :: Con -> Name
 conName (NormalC n _) = n
