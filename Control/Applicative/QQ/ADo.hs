@@ -167,7 +167,8 @@ failingPattern pat = case pat of
 
 -- Uses lookupValueName when available via TH magic, otherwise tries a
 -- best-guess approach (see the caveats section)
--- | Finds a 'TyConI dec' corresponding to the given name, and returns 'dec'
+-- | Given a 'Name' of a value constructor, find the 'TyConI dec' of its
+-- type, and return 'dec'
 findTyCon :: Name -> Q Dec
 findTyCon n = case $maybeLookupValueName of
   Just fn -> do
