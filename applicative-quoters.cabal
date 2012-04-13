@@ -23,6 +23,8 @@ Library
   Exposed-modules:
       Control.Applicative.QQ.ADo
       Control.Applicative.QQ.Idiom
+  Other-modules:
+      Magic
 
   Build-depends:
       base >= 4 && < 4.6,
