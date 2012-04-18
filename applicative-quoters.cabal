@@ -23,12 +23,11 @@ Library
   Exposed-modules:
       Control.Applicative.QQ.ADo
       Control.Applicative.QQ.Idiom
-  Other-modules:
-      Magic
 
   Build-depends:
       base >= 4 && < 4.6,
       haskell-src-meta >= 0.2 && < 0.6,
+      notcpp == 0.0.1,
       template-haskell >= 2.4 && < 2.8
 
   Extensions:

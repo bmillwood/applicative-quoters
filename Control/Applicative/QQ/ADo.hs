@@ -31,7 +31,7 @@ import Language.Haskell.TH.Quote
 import Control.Monad
 import Data.Data (cast, gmapQ)
 
-import Magic
+import NotCPP.ScopeLookup
 
 -- $desugaring
 --
@@ -170,7 +170,7 @@ failingPattern pat = case pat of
 -- | Given a 'Name' of a value constructor, find the 'TyConI dec' of its
 -- type, and return 'dec'
 findTyCon :: Name -> Q Dec
-findTyCon n = case $maybeLookupValueName of
+findTyCon n = case $(scopeLookup "lookupValueName") of
   Just fn -> do
     DataConI _ _ tn _ <- maybe noScope reify =<< fn (show n)
     TyConI dec <- reify tn
