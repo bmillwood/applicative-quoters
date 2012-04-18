@@ -10,6 +10,9 @@ prior to 7.0.4 due to some strange TH magic.
 
 Changelog:
 
+0.1.0.5:
+- Mostly a rerelease of 0.1.0.4 to fix some metadata
+
 0.1.0.4:
 - GHC 7.4 compatibility
 
