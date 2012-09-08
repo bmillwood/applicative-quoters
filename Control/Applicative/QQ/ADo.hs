@@ -31,7 +31,7 @@ import Language.Haskell.TH.Quote
 import Control.Monad
 import Data.Data (cast, gmapQ)
 
-import NotCPP.ScopeLookup
+import NotCPP.ScopeLookup (scopeLookup)
 
 -- $desugaring
 --
