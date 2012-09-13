@@ -1,6 +1,9 @@
-HEAD:
+0.1.0.6:
 - Use the notcpp package to aid with name lookup
 - Compatibility with GHC 7.6.1 and TH 2.8
+- Drop compatibility with GHC < 7.4 to fix a bug with infix handling
+- Doc improvements
+- Remove maintainer
 
 0.1.0.5:
 - Mostly a rerelease of 0.1.0.4 to fix some metadata
