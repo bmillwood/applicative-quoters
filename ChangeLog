@@ -1,3 +1,6 @@
+0.1.0.7:
+- Make it a little more obvious that the package is unmaintained
+
 0.1.0.6:
 - Use the notcpp package to aid with name lookup
 - Compatibility with GHC 7.6.1 and TH 2.8
