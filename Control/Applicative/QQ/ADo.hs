@@ -110,7 +110,13 @@ ado' :: QuasiQuoter
 ado' = ado'' True
 
 ado'' ::  Bool -> QuasiQuoter
-ado'' b = QuasiQuoter { quoteExp = \str -> applicate b =<< parseDo str }
+ado'' b = QuasiQuoter { quoteExp = \str -> applicate b =<< parseDo str,
+  quotePat = nonsense "pattern",
+  quoteType = nonsense "type",
+  quoteDec = nonsense "declaration" }
+ where
+  nonsense context = fail $ "You can't use ado in " ++ context ++
+    " context, that doesn't even make sense."
 
 parseDo ::  (Monad m) => String -> m [Stmt]
 parseDo str =

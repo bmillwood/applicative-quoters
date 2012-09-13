@@ -28,7 +28,13 @@ import Language.Haskell.TH.Syntax
 -- applications depends on what haskell-src-meta does, which depends on what
 -- TH supports, so may depend on your GHC version.
 i :: QuasiQuoter
-i = QuasiQuoter { quoteExp = applicate <=< either fail return . parseExp }
+i = QuasiQuoter { quoteExp = applicate <=< either fail return . parseExp,
+  quotePat = nonsense "pattern",
+  quoteType = nonsense "type",
+  quoteDec = nonsense "dec" }
+ where
+  nonsense context = fail $ "You can't use idiom brackets in " ++ context ++
+    " context, that doesn't even make sense."
 
 applicate :: Exp -> ExpQ
 applicate (AppE f x) =
