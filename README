@@ -5,5 +5,5 @@ emulate Conor McBride's idiom brackets.
 They are originally taken from Matt Morrow's haskell-src-meta package,
 before he disappeared forever and I took up maintainership of it.
 
-There is a known bug where building the shared library fails on GHCs
-prior to 7.0.4 due to some strange TH magic.
+However, I no longer maintain it, since it is unused even by me. If
+you're interested in keeping it updated, feel free to take over.
