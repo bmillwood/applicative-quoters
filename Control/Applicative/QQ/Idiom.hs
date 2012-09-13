@@ -21,5 +21,11 @@ applicate (AppE f x) =
   [| $(applicate f) <*> $(return x) |]
 applicate (InfixE (Just left) op (Just right)) =
   [| pure $(return op) <*> $(return left) <*> $(return right) |]
+applicate (UInfixE left op right) = case (left,right) of
+  (UInfixE{}, _) -> ambig
+  (_, UInfixE{}) -> ambig
+  (_, _) -> [| pure $(return op) <*> $(return left) <*> $(return right) |]
+ where
+  ambig = fail "Ambiguous infix expression in idiom bracket."
 applicate x = [| pure $(return x) |]
 
