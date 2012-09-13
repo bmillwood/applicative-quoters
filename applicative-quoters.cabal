@@ -9,6 +9,9 @@ Description:
     Quasiquoters taken from Matt Morrow's haskell-src-meta to implement
     Conor McBride's idiom brackets, and a do-notation that only requires
     Applicative (and is correspondingly less powerful).
+    .
+    applicative-quoters currently has no maintainer: if it is broken and
+    you want it to be fixed, then fix it!
 
 Author:       Matt Morrow
 Copyright:    (c) Matt Morrow
