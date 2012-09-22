@@ -19,9 +19,6 @@ module Control.Applicative.QQ.ADo (
 
     -- * Desugaring
     -- $desugaring
-
-    -- * Caveats
-    -- $caveats
     ) where
 
 import Control.Applicative
@@ -29,9 +26,6 @@ import Language.Haskell.Meta (parseExp)
 import Language.Haskell.TH
 import Language.Haskell.TH.Quote
 import Control.Monad
-import Data.Data (cast, gmapQ)
-
-import NotCPP.ScopeLookup (scopeLookup)
 
 -- $desugaring
 --
@@ -67,23 +61,6 @@ import NotCPP.ScopeLookup (scopeLookup)
 -- Becomes:
 --
 -- > foo = (\ ~(x:xs) (A y) -> T x y) <$> foo bar baz <*> quux quaffle
-
--- $caveats
---
--- Prior to GHC 7.4 and Template Haskell 2.7, it was impossible to reliably
--- look up constructor names just from a string: if there is a type with the
--- same name, it will return information for that instead.
---
--- This means that the safe version of 'ado' is prone to failure where types
--- and values share names. It tries to make a \"best guess\" in the common
--- case that type and constructor have the same name, but has nontrivial
--- failure modes.
---
--- In such cases, 'ado'' should work fine: at a pinch, you
--- can bind simple variables with it and case-match on them in your last
--- statement.
---
--- See also: <http://hackage.haskell.org/trac/ghc/ticket/4429>
 
 -- | Usage:
 --
@@ -153,72 +130,44 @@ applicate rawPatterns stmt = do
 
 failingPattern :: Pat -> Q Bool
 failingPattern pat = case pat of
-  LitP {} -> return True
+  -- patterns that always succeed
   VarP {} -> return False
-  TupP ps -> anyFailing ps
-  ConP n ps -> liftM2 ((||) . not) (singleCon n) (anyFailing ps)
-  InfixP p n q -> failingPattern $ ConP n [p, q]
   TildeP {} -> return False
   WildP -> return False
-  RecP n fps -> failingPattern $ ConP n (map snd fps)
+  -- patterns that can fail
+  LitP {} -> return True
   ListP {} -> return True
-  -- recurse on any subpatterns
-  -- we do this implicitly because it avoids referring to the constructors
-  -- by name, which means we can work with TH versions where they didn't
-  -- exist
-  _ -> fmap or . sequence $ gmapQ (mkQ (return False) failingPattern) pat
+  -- ConP can fail if the constructor is not the only constructor of its type
+  -- /or/ if any of the subpatterns can fail
+  ConP n ps -> liftM2 (\x y -> not x || y) (singleCon n) (anyFailing ps)
+  -- some other patterns are essentially ConP patterns
+  InfixP p n q -> failingPattern $ ConP n [p, q]
+  UInfixP p n q -> failingPattern $ ConP n [p, q]
+  RecP n fps -> failingPattern $ ConP n (map snd fps)
+  -- recursive cases
+  TupP ps -> anyFailing ps
+  UnboxedTupP ps -> anyFailing ps
+  ParensP p -> failingPattern p
+  BangP p -> failingPattern p
+  AsP _ p -> failingPattern p
+  SigP p _ -> failingPattern p
+  ViewP _ p -> failingPattern p
  where
   anyFailing = fmap or . mapM failingPattern
-  mkQ d f x = maybe d f (cast x)
-
--- Uses lookupValueName when available via TH magic, otherwise tries a
--- best-guess approach (see the caveats section)
--- | Given a 'Name' of a value constructor, find the 'TyConI dec' of its
--- type, and return 'dec'
-findTyCon :: Name -> Q Dec
-findTyCon n = case $(scopeLookup "lookupValueName") of
-  Just fn -> do
-    DataConI _ _ tn _ <- maybe noScope reify =<< fn (show n)
-    TyConI dec <- reify tn
-    return dec
-   where
-    noScope = fail $ "Data constructor " ++ show n ++ " not in scope"
-  Nothing -> do
-    -- This is what we do when lookupValueName isn't available.
-    info <- reify n
-    -- This covers the common case of a data type with one of the
-    -- constructors being named the same as the type, but fails if there
-    -- is a type Foo and a constructor Foo of a different type :(
-    TyConI dec <- case info of
-        DataConI _ _ tn _ -> reify tn
-        -- we hope that the base of the tn is the same, but it is
-        -- properly qualified
-        TyConI (DataD _ _ _ cs _)
-          | any rightName cs -> return info
-          | otherwise -> errShadow
-        TyConI (NewtypeD _ _ _ c _)
-          | rightName c -> return info
-          | otherwise -> errShadow
-        _ -> fail $ "ado singleCon: not a constructor: " ++ show info
-    return dec
-   where
-    rightName c = nameBase n == nameBase (conName c)
-    errShadow = fail . concat $ ["ado singleCon: couldn't find data ",
-        "dec for name: ", show n, ", sorry :( - try using ado' instead"]
 
 -- | Take the name of a value constructor and try to find out if it is
 -- the only constructor of its type
 singleCon :: Name -> Q Bool
 singleCon n = do
-    dec <- findTyCon n
-    case dec of
-        DataD _ _ _ [_] _ -> return True
-        NewtypeD {} -> return True
-        DataD _ _ _ (_:_) _ -> return False
-        _ -> fail $ "ado singleCon: not a data declaration: " ++ show dec
-
-conName :: Con -> Name
-conName (NormalC n _) = n
-conName (RecC n _) = n
-conName (InfixC _ n _) = n
-conName (ForallC _ _ c) = conName c
+  dec <- recover noScope $ do
+    Just vn <- lookupValueName (show n)
+    DataConI _ _ tn _ <- reify vn
+    TyConI dec <- reify tn
+    return dec
+  case dec of
+    DataD _ _ _ [_] _ -> return True
+    NewtypeD {} -> return True
+    DataD _ _ _ (_:_) _ -> return False
+    _ -> fail $ "ado singleCon: not a data declaration: " ++ show dec
+ where
+  noScope = fail $ "Data constructor " ++ show n ++ " lookup failed."
