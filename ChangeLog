@@ -1,3 +1,8 @@
+0.1.0.8:
+- Doc fixes
+- Since support for GHC < 7.4 was dropped, don't need notcpp or related code
+- Make dependency bounds more optimistic
+
 0.1.0.7:
 - Make it a little more obvious that the package is unmaintained
 
