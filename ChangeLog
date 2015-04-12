@@ -1,3 +1,6 @@
+0.1.0.9
+- Updated examples to reflect new QQ syntax
+
 0.1.0.8:
 - Doc fixes
 - Since support for GHC < 7.4 was dropped, don't need notcpp or related code
