@@ -32,7 +32,7 @@ import Control.Monad
 -- If you use patterns that may fail:
 --
 -- > foo :: Applicative f => f (Maybe T)
--- > foo = [$ado|
+-- > foo = [ado|
 -- >    x:xs <- foo bar baz
 -- >    Just y <- quux quaffle
 -- >    T x y |]
@@ -53,7 +53,7 @@ import Control.Monad
 --
 -- > newtype A = A Int
 -- > foo :: Applicative f => f T
--- > foo = [$ado|
+-- > foo = [ado|
 -- >    ~(x:xs) <- foo bar baz
 -- >    A y <- quux quaffle
 -- >    T x y |]
@@ -64,23 +64,23 @@ import Control.Monad
 
 -- | Usage:
 --
--- > ghci> [$ado| a <- "foo"; b <- "bar"; (a,b) |]
+-- > ghci> [ado| a <- "foo"; b <- "bar"; (a,b) |]
 -- > [('f','b'),('f','a'),('f','r'),('o','b'),('o','a'),('o','r'),('o','b'),('o','a'),('o','r')]
 --
--- > ghci> [$ado| Just a <- [Just 1,Nothing,Just 2]; b <- "fo"; (a,b) |]
+-- > ghci> [ado| Just a <- [Just 1,Nothing,Just 2]; b <- "fo"; (a,b) |]
 -- > [Just (1,'f'),Just (1,'o'),Nothing,Nothing,Just (2,'f'),Just (2,'o')]
 --
 -- Notice that the last statement is not of an applicative type, so when translating
 -- from monadic do, drop the final 'return':
 --
--- > (do x <- [1,2,3]; return (x + 1)) == [$ado| x <- [1,2,3]; x + 1 |]
+-- > (do x <- [1,2,3]; return (x + 1)) == [ado| x <- [1,2,3]; x + 1 |]
 
 ado :: QuasiQuoter
 ado = ado'' False
 
 -- | Variant of 'ado' that does not implicitly add a Maybe when patterns may fail:
 --
--- > ghci> [$ado'| Just a <- [Just 1,Nothing,Just 2]; b <- "fo"; (a,b) |]
+-- > ghci> [ado'| Just a <- [Just 1,Nothing,Just 2]; b <- "fo"; (a,b) |]
 -- > [(1,'f'),(1,'o'),*** Exception: <interactive>:...
 --
 ado' :: QuasiQuoter
