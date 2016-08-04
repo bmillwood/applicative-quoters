@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE CPP, TemplateHaskell #-}
 
 -- | Applicative do. Philippa Cowderoy's idea, some explanations due Edward
 -- Kmett
@@ -161,13 +161,25 @@ singleCon :: Name -> Q Bool
 singleCon n = do
   dec <- recover noScope $ do
     Just vn <- lookupValueName (show n)
+# if MIN_VERSION_template_haskell(2,11,0)
+    DataConI _ _ tn <- reify vn
+# else
     DataConI _ _ tn _ <- reify vn
+# endif
     TyConI dec <- reify tn
     return dec
   case dec of
+#if MIN_VERSION_template_haskell(2,11,0)
+    DataD _ _ _ _ [_] _ -> return True
+# else
     DataD _ _ _ [_] _ -> return True
+#endif
     NewtypeD {} -> return True
+#if MIN_VERSION_template_haskell(2,11,0)
+    DataD _ _ _ _ (_:_) _ -> return False
+# else
     DataD _ _ _ (_:_) _ -> return False
+#endif
     _ -> fail $ "ado singleCon: not a data declaration: " ++ show dec
  where
   noScope = fail $ "Data constructor " ++ show n ++ " lookup failed."
