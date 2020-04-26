@@ -5,7 +5,7 @@
 module Control.Applicative.QQ.Idiom (i) where
 
 import Control.Applicative ((<*>), pure)
-import Control.Monad ((<=<))
+import Control.Monad ((<=<), replicateM)
 import Language.Haskell.Meta (parseExp)
 import Language.Haskell.TH.Lib
 import Language.Haskell.TH.Quote
@@ -27,8 +27,18 @@ import Language.Haskell.TH.Syntax
 -- are an infix expression. If they are, will likely complain that it doesn't
 -- have fixity information (unless haskell-src-meta becomes clever enough to
 -- resolve that itself).
+--
+-- A tuple or list on it's own is treated as if elements were separated by
+-- spaces:
+--
+-- > [i| [getLine, getLine] |]
+-- > >>> ABC
+-- > >>> XYZ
+-- > -> ("ABC","XYZ")
+--
+-- in other words `[i| (a,b,c) |]` is treated the same as `[i| (,,) a b c |]`
 i :: QuasiQuoter
-i = QuasiQuoter { quoteExp = applicate <=< either fail return . parseExp,
+i = QuasiQuoter { quoteExp = applicate <=< tupConv <=< either fail return . parseExp,
   quotePat = nonsense "pattern",
   quoteType = nonsense "type",
   quoteDec = nonsense "dec" }
@@ -48,4 +58,17 @@ applicate (UInfixE left op right) = case (left,right) of
  where
   ambig = fail "Ambiguous infix expression in idiom bracket."
 applicate x = [| pure $(return x) |]
+
+-- | Converts `(a,b,c)` to `(,,) a b c`, allowing `[i| (f,g) ] x y`,
+-- and the same for lists
+tupConv :: Exp -> ExpQ
+tupConv (TupE vs) = appsE $ conE (tupleDataName (length vs)) : map return vs
+tupConv (ListE vs) = appsE $ listConE (length vs) : map return vs
+ where
+        -- listConE 2 = [| \ n1 n2 -> [n1,n2] |]
+        listConE len = do
+                ns <- replicateM len (newName "n")
+                [ varP n | n <- ns ] `lamE` listE [ varE n | n <- ns ]
+tupConv x = return x
+
 
